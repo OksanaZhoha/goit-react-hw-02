@@ -1,23 +1,54 @@
-import Profile from "../Profile/Profile";
-import userData from "..//../userData.json";
-import FriendList from "../FriendList/FriendList";
-import friends from "../../friends.json";
-import TransactionHistory from "../TransactionHistory/TransactionHistory";
-import transactions from "..//../transactions.json";
-import css from "./App.module.css";
+import Description from '../Description/Description';
+import { useEffect, useState } from 'react';
+import Options from '../Options/Options';
+import Feedback from '../Feedback/Feedback';
+import Notification from '../Notification/Notification';
 
 export default function App() {
+  const [feedBack, setFeedBack] = useState(() => {
+    const savedFeedback = window.localStorage.getItem('saved-feedback');
+    if (savedFeedback !== null) {
+      return JSON.parse(savedFeedback);
+    }
+    return { good: 0, neutral: 0, bad: 0 };
+  });
+
+  useEffect(() => {
+    window.localStorage.setItem('saved-feedback', JSON.stringify(feedBack));
+  }, [feedBack]);
+
+  const totalFeedback = feedBack.good + feedBack.neutral + feedBack.bad;
+
+  const positivePercentage = Math.round((feedBack.good / totalFeedback) * 100);
+
+  const updateFeedback = feedbackType => {
+    setFeedBack({
+      ...feedBack,
+      [feedbackType]: feedBack[feedbackType] + 1,
+    });
+  };
+
+  const resetFeedback = () => {
+    setFeedBack({ good: 0, neutral: 0, bad: 0 });
+  };
+
   return (
-    <div className={css.container}>
-      <Profile
-        name={userData.username}
-        tag={userData.tag}
-        location={userData.location}
-        image={userData.avatar}
-        stats={userData.stats}
+    <div>
+      <Description />
+      <Options
+        onUpdate={updateFeedback}
+        onReset={resetFeedback}
+        totalValue={totalFeedback}
       />
-      <FriendList friends={friends} />
-      <TransactionHistory transactions={transactions} />
+      {totalFeedback > 0 ? (
+        <Feedback
+          value={feedBack}
+          totalValue={totalFeedback}
+          percentageCalculation={positivePercentage}
+        />
+      ) : (
+        <Notification />
+      )}
     </div>
   );
 }
